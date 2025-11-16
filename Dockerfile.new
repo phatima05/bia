@@ -1,0 +1,25 @@
+FROM public.ecr.aws/docker/library/node:20-slim
+RUN npm install -g npm@10 --loglevel=error
+
+# Instalando curl para health checks
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/src/app
+
+# Copiar package.json raiz e instalar dependências do backend
+COPY package*.json ./
+RUN npm install --loglevel=error
+
+# Copiar package.json do client e instalar dependências
+COPY client/package*.json ./client/
+RUN cd client && npm install --loglevel=error
+
+# Copiar todos os arquivos
+COPY . .
+
+# Build do frontend com Vite - VITE_API_URL configurado para container
+RUN cd client && VITE_API_URL=/api npm run build
+
+EXPOSE 8080
+
+CMD ["npm", "start"]
